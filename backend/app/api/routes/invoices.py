@@ -6,7 +6,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, or_, select
@@ -179,15 +179,17 @@ def _to_list_item(invoice: Invoice, submitted_by: Optional[str]) -> InvoiceListI
 def list_invoices(
     db: Session = Depends(get_db),
     _: User = Depends(require_reviewer),
-    status_filter: Optional[str] = Query(default=None, alias="status"),
+    status_filter: Optional[List[str]] = Query(default=None, alias="status"),
     q: Optional[str] = Query(default=None, description="Substring filter on filename or case id"),
     page: int = Query(1, ge=1),
-    size: int = Query(25, ge=1, le=100),
+    size: int = Query(10, ge=1, le=100),
 ) -> InvoiceListResponse:
     filters = []
     search = q.strip() if q else None
     if status_filter:
-        filters.append(Invoice.status == status_filter.upper())
+        statuses = [s.strip().upper() for s in status_filter if s and s.strip()]
+        if statuses:
+            filters.append(Invoice.status.in_(statuses))
     if search:
         pattern = "%" + search + "%"
         filters.append(

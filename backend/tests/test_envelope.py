@@ -86,7 +86,7 @@ def test_list_envelope_count_pagination_search(client: TestClient, reviewer_toke
     assert body["count"] == len(body["items"]) >= 1
     assert body["total"] >= body["count"]
     assert body["pages"] >= 1
-    assert body["page"] == 1 and body["size"] == 25
+    assert body["page"] == 1 and body["size"] == 10
     assert body["search"] is None
     # Rows themselves are bare resources: no per-row success flag.
     assert "success" not in body["items"][0]
