@@ -25,8 +25,9 @@ services:
       UPLOAD_DIR: /data/uploads
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
       NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
-      NVIDIA_TEXT_MODEL: ${NVIDIA_TEXT_MODEL:-meta/llama-3.3-70b-instruct}
-      NVIDIA_VISION_MODEL: ${NVIDIA_VISION_MODEL:-qwen/qwen2.5-vl-72b-instruct}
+      NVIDIA_TEXT_MODEL: ${NVIDIA_TEXT_MODEL:-meta/llama-3.2-11b-vision-instruct}
+      NVIDIA_VISION_MODEL: ${NVIDIA_VISION_MODEL:-meta/llama-3.2-11b-vision-instruct}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-120}
       # Seeded users are created on first start from these env credentials
       # (python -m app.initial_data in the entrypoint).
       SEED_REVIEWER_EMAIL: ${SEED_REVIEWER_EMAIL:-reviewer@invoiceops.dev}

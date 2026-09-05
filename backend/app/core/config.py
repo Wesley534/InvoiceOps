@@ -65,9 +65,13 @@ class Settings(BaseSettings):
     # --- NVIDIA API (OpenAI compatible) ---
     nvidia_api_key: str = ""
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
-    nvidia_text_model: str = "meta/llama-3.3-70b-instruct"
-    nvidia_vision_model: str = "qwen/qwen2.5-vl-72b-instruct"
-    llm_timeout_seconds: float = 30.0
+    # llama-3.3-70b-instruct / qwen2.5-vl-72b-instruct reached end of life on
+    # 2026-08-26 on NVIDIA NIM. llama-3.2-11b-vision-instruct is the live
+    # free-tier model that serves both the text-repair path (native JSON mode)
+    # and the degraded-scan vision path on the hosted endpoint.
+    nvidia_text_model: str = "meta/llama-3.2-11b-vision-instruct"
+    nvidia_vision_model: str = "meta/llama-3.2-11b-vision-instruct"
+    llm_timeout_seconds: float = 120.0
     llm_retries: int = 2
     llm_temperature: float = 0.0
 
