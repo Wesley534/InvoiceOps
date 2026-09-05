@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://invoiceops.local/contracts/decision-log.schema.json",
+  "title": "InvoiceOps Decision Log Record",
+  "description": "Append-only record of the human approval gate (Stage 6). The only place a final human outcome exists. Records are never updated or deleted.",
+  "type": "object",
+  "required": [
+    "record_id",
+    "report_id",
+    "invoice_number",
+    "vendor",
+    "system_decision",
+    "human_outcome",
+    "decided_by",
+    "decided_at"
+  ],
+  "properties": {
+    "record_id": { "type": "string", "pattern": "^DEC-[0-9]{4}-[0-9]{4}$" },
+    "report_id": { "type": "string", "pattern": "^RPT-[0-9]{4}-[0-9]{4}$" },
+    "invoice_number": { "type": "string" },
+    "vendor": { "type": "string" },
+    "system_decision": { "type": "string", "enum": ["PASS", "REVIEW", "BLOCK"] },
+    "human_outcome": {
+      "type": "string",
+      "enum": ["pending", "approved", "rejected", "override_block"]
+    },
+    "decided_by": { "type": "string", "description": "Identifier of the human approver (e.g. email)." },
+    "decided_at": { "type": "string", "format": "date-time" },
+    "override_reason": {
+      "type": ["string", "null"],
+      "description": "Required when human_outcome contradicts system_decision (e.g. override_block on a BLOCK)."
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

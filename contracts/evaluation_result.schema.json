@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://invoiceops.local/contracts/evaluation-result.schema.json",
+  "title": "InvoiceOps Evaluation Result",
+  "description": "One scored row per case per method, produced by the Day 4 evaluation harness. Scoring follows the dataset's EVALUATION_RUBRIC.md (decision 40%, extraction 30%, issue detection 20%, reasoning 10%).",
+  "type": "object",
+  "required": [
+    "case_id",
+    "method",
+    "decision_correct",
+    "field_extraction_score",
+    "issue_detection",
+    "reasoning_quality",
+    "processing_time_seconds",
+    "critical_failure",
+    "total_score"
+  ],
+  "properties": {
+    "case_id": { "type": "string", "pattern": "^CASE-[0-9]{3}$" },
+    "method": { "type": "string", "enum": ["manual", "simple_llm", "invoiceops"] },
+    "decision_correct": { "type": "boolean" },
+    "field_extraction_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Average over required fields: exact=1.0, close=0.7, incorrect=0.0, missing=0.0."
+    },
+    "issue_detection": {
+      "type": "string",
+      "enum": ["detected", "partial", "missed", "n/a"]
+    },
+    "reasoning_quality": {
+      "type": "string",
+      "enum": ["strong", "adequate", "weak", "absent"]
+    },
+    "processing_time_seconds": { "type": "number", "minimum": 0 },
+    "critical_failure": {
+      "type": "boolean",
+      "description": "True when a high-severity REVIEW case was decided PASS (CASE-005/006/012). A critical failure fails the entire evaluation run regardless of score."
+    },
+    "total_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

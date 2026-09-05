@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://invoiceops.local/contracts/validation-report.schema.json",
+  "title": "InvoiceOps Validation Report",
+  "description": "Final per-invoice output of the InvoiceOps pipeline: decision, all check results with evidence, detected issues, and the human action required. Produced by Stage 5 (Report).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "report_id",
+    "case_id",
+    "source",
+    "decision",
+    "confidence",
+    "processing_time_seconds",
+    "extraction",
+    "checks",
+    "issues",
+    "recommendation",
+    "human_action_required",
+    "evidence_package"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "report_id": { "type": "string", "pattern": "^RPT-[0-9]{4}-[0-9]{4}$" },
+    "case_id": { "type": "string", "examples": ["CASE-001"] },
+    "source": { "type": "string" },
+    "decision": { "type": "string", "enum": ["PASS", "REVIEW", "BLOCK"] },
+    "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+    "processing_time_seconds": { "type": "number", "minimum": 0 },
+    "extraction": { "$ref": "invoice-extraction.schema.json" },
+    "checks": {
+      "type": "array",
+      "description": "Results of all 11 validation checks. Every check must be present in every report (coverage guarantee).",
+      "items": { "$ref": "#/$defs/check" },
+      "minItems": 11
+    },
+    "issues": {
+      "type": "array",
+      "description": "Detected exceptions with evidence, one entry per failed check.",
+      "items": { "$ref": "#/$defs/issue" }
+    },
+    "recommendation": {
+      "type": "object",
+      "required": ["text", "tier"],
+      "properties": {
+        "text": { "type": "string" },
+        "tier": { "type": "string", "enum": ["pass", "review", "block"] }
+      },
+      "additionalProperties": false
+    },
+    "human_action_required": {
+      "type": "string",
+      "enum": ["none", "confirm_extraction", "investigate", "escalate", "approve"]
+    },
+    "evidence_package": {
+      "type": "object",
+      "description": "Cross-document records that support the decision. Null for 'no match found' lookups.",
+      "required": ["vendor", "po", "receipts", "history"],
+      "properties": {
+        "vendor": { "type": ["object", "null"] },
+        "po": { "type": ["object", "null"] },
+        "receipts": { "type": "array", "items": { "type": "object" } },
+        "history": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": ["check_id", "name", "status", "severity", "detail"],
+      "properties": {
+        "check_id": {
+          "type": "string",
+          "enum": [
+            "vendor_approved",
+            "po_exists_open",
+            "po_vendor_match",
+            "po_currency_match",
+            "po_quantity_match",
+            "po_amount_match",
+            "arithmetic_correct",
+            "goods_received",
+            "duplicate_not_found",
+            "fields_complete",
+            "content_clean"
+          ]
+        },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["pass", "fail", "not_applicable", "error"] },
+        "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+        "detail": { "type": "string", "description": "Human-readable explanation, including computed values (e.g. '+5.0% overage')." },
+        "evidence": {
+          "type": "array",
+          "description": "References like 'vendor_master.csv -> V-002' or 'goods_receipts.csv -> GRN-2026-0451'.",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "issue": {
+      "type": "object",
+      "required": ["check_id", "tier", "description", "evidence"],
+      "properties": {
+        "check_id": { "type": "string" },
+        "tier": { "type": "string", "enum": ["block", "review"] },
+        "description": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

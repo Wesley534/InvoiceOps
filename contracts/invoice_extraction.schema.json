@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://invoiceops.local/contracts/invoice-extraction.schema.json",
+  "title": "InvoiceOps Invoice Extraction",
+  "description": "Structured field extraction from a vendor invoice PDF. Produced by Stage 2 (Extract) of the InvoiceOps pipeline. All monetary values are strings in a canonical decimal format (e.g. \"32000.00\") to avoid float drift.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "case_id",
+    "source",
+    "extraction_method",
+    "extracted_at",
+    "fields",
+    "line_items",
+    "document_quality",
+    "extraction_issues",
+    "prompt_injection_flags"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "case_id": { "type": "string", "examples": ["CASE-001"] },
+    "source": { "type": "string", "description": "Path to the input PDF as given to the CLI." },
+    "extraction_method": {
+      "type": "string",
+      "enum": ["text_layer_regex", "ocr", "llm_vision", "hybrid"]
+    },
+    "extracted_at": { "type": "string", "format": "date-time" },
+    "fields": {
+      "type": "object",
+      "description": "Key invoice fields. Every field is a value object carrying confidence and source.",
+      "propertyNames": {
+        "enum": [
+          "invoice_number",
+          "invoice_date",
+          "vendor_name",
+          "vendor_tax_pin",
+          "po_number",
+          "currency",
+          "subtotal",
+          "tax_rate",
+          "tax_amount",
+          "total_amount",
+          "payment_notes"
+        ]
+      },
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(invoice_number|invoice_date|vendor_name|vendor_tax_pin|po_number|currency|subtotal|tax_rate|tax_amount|total_amount|payment_notes)$": {
+          "$ref": "#/$defs/field"
+        }
+      }
+    },
+    "line_items": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/lineItem" }
+    },
+    "document_quality": {
+      "type": "object",
+      "required": ["legible", "method", "notes"],
+      "properties": {
+        "legible": { "type": "boolean" },
+        "method": { "type": "string", "enum": ["text_layer", "ocr", "llm_vision", "unknown"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "extraction_issues": {
+      "type": "array",
+      "description": "Human-readable notes about fields that were ambiguous, conflicting, or repaired.",
+      "items": { "type": "string" }
+    },
+    "prompt_injection_flags": {
+      "type": "array",
+      "description": "Deterministic matches of anomalous instructional content (e.g. 'ignore all previous instructions'). Populated by the content-anomaly scan; drives Check 11.",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "snippet"],
+        "properties": {
+          "pattern": { "type": "string" },
+          "snippet": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "required": ["value", "confidence", "source"],
+      "properties": {
+        "value": {
+          "description": "Extracted value as a string (canonical formats: ISO dates YYYY-MM-DD, decimal amounts '1234.56', ISO currency codes, 0.10-style tax rate).",
+          "type": ["string", "null"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "missing"]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["text_layer", "ocr", "llm_vision", "derived"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "lineItem": {
+      "type": "object",
+      "required": [
+        "line_no",
+        "description",
+        "quantity",
+        "unit_price",
+        "tax_rate",
+        "amount",
+        "confidence",
+        "source"
+      ],
+      "properties": {
+        "line_no": { "type": "integer", "minimum": 1 },
+        "description": { "type": "string" },
+        "quantity": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$" },
+        "unit_price": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$" },
+        "tax_rate": { "type": "string", "pattern": "^0(\\.[0-9]+)?$" },
+        "amount": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$" },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low", "missing"] },
+        "source": { "type": "string", "enum": ["text_layer", "ocr", "llm_vision", "derived"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
