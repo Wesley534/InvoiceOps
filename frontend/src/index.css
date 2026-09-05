@@ -1,38 +1,91 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Brand palette — deep green family */
+  --color-forest: #062b15; /* deep green: dark surfaces, sidebar */
+  --color-forest-light: #0a3d1f;
+  --color-brand: #018038; /* primary green */
+  --color-brand-deep: #016b2f; /* hover / pressed green */
+  --color-brand-ink: #045023;
+  --color-mint: #f4faf6; /* pale green-tinted surface */
+  --color-mint-strong: #e4f1e9;
+
+  /* Brand neutrals */
+  --color-ink: #0f172a; /* headings / emphasis text */
+  --color-coal: #111111; /* near-black accents */
+
+  /* Accent green for on-dark surfaces (logo tick, active icons) */
+  --color-accent: #3ddc84;
+
+  /* Signature accent red — used sparingly for BLOCK / overrides */
+  --color-signal: #e63946;
+  --color-signal-deep: #c5222f;
+  --color-signal-soft: #fdecec;
+}
+
 @layer base {
   :root {
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     font-family: var(--font-sans);
     background-color: #ffffff;
-    color: #18181b;
+    color: #27272a;
     min-height: 100vh;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
+
+  /* Heavier default for headings that don't carry an explicit weight class. */
+  h1, h2, h3, h4 {
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  /* Subtle scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.14);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.26);
+  }
 }
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@layer components {
+  /* Readable prose for report/markdown-style content */
+  .prose-report h1,
+  .prose-report h2,
+  .prose-report h3,
+  .prose-report h4 {
+    color: var(--color-ink);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .prose-report h1 { font-size: 1.125rem; margin: 0 0 0.5rem; }
+  .prose-report h2 { font-size: 1rem; margin: 1rem 0 0.5rem; }
+  .prose-report h3 { font-size: 0.875rem; margin: 0.75rem 0 0.375rem; }
+  .prose-report p { color: #3f3f46; line-height: 1.6; margin: 0.35rem 0; }
+  .prose-report ul { list-style: disc; padding-left: 1.25rem; margin: 0.4rem 0; color: #3f3f46; }
+  .prose-report li { line-height: 1.55; margin: 0.25rem 0; }
+  .prose-report code { font-family: var(--font-mono); font-size: 0.8em; background: var(--color-mint-strong); border-radius: 0.375rem; padding: 0.1rem 0.3rem; }
+  .prose-report strong { color: var(--color-ink); }
 }
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.22);
-}
-

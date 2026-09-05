@@ -154,7 +154,7 @@ def list_vendors(
     _: User = Depends(require_reviewer),
     q: Optional[str] = Query(default=None, description="Substring filter on code or name"),
     page: int = Query(1, ge=1),
-    size: int = Query(25, ge=1, le=100),
+    size: int = Query(10, ge=1, le=100),
 ) -> PageOut[VendorOut]:
     conditions = []
     search = q.strip() if q else None
@@ -292,7 +292,7 @@ def list_purchase_orders(
     vendor_id: Optional[str] = Query(default=None),
     status_filter: Optional[str] = Query(default=None, alias="status"),
     page: int = Query(1, ge=1),
-    size: int = Query(25, ge=1, le=100),
+    size: int = Query(10, ge=1, le=100),
 ) -> PageOut[PurchaseOrderOut]:
     conditions = []
     search = q.strip() if q else None
@@ -427,7 +427,7 @@ def list_goods_receipts(
     po_number: Optional[str] = Query(default=None),
     q: Optional[str] = Query(default=None, description="Substring filter on GRN number"),
     page: int = Query(1, ge=1),
-    size: int = Query(25, ge=1, le=100),
+    size: int = Query(10, ge=1, le=100),
 ) -> PageOut[GoodsReceiptOut]:
     conditions = []
     search = q.strip() if q else None
@@ -530,7 +530,7 @@ def list_processed_invoices(
     vendor_id: Optional[str] = Query(default=None),
     q: Optional[str] = Query(default=None, description="Substring filter on invoice number"),
     page: int = Query(1, ge=1),
-    size: int = Query(25, ge=1, le=100),
+    size: int = Query(10, ge=1, le=100),
 ) -> PageOut[ProcessedInvoiceOut]:
     conditions = []
     search = q.strip() if q else None

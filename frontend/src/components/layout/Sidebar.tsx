@@ -1,65 +1,73 @@
 import React from 'react';
-import { 
-  Home, 
-  PlusCircle, 
-  Activity, 
-  FileCheck2, 
-  BarChart3, 
+import {
+  FileCheck2,
+  FileUp,
+  Home,
+  Inbox,
+  Database,
   Settings as SettingsIcon,
-  ShieldCheck
+  ShieldCheck,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../auth/AuthContext';
+import type { QueueStats } from '../../lib/types';
 
-interface SidebarProps {
-  currentPage: string;
-  onNavigate: (page: string) => void;
-  pendingReviewsCount: number;
+export type NavId = 'dashboard' | 'upload' | 'inbox' | 'masterdata' | 'settings';
+
+interface NavItem {
+  id: NavId;
+  label: string;
+  icon: React.ElementType;
+  isHighlight?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  currentPage,
-  onNavigate,
-  pendingReviewsCount
-}) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Home', icon: Home },
-    { id: 'new_task', label: 'New Task', icon: PlusCircle, isHighlight: true },
-    { id: 'activity', label: 'Activity', icon: Activity, badge: pendingReviewsCount > 0 ? pendingReviewsCount : undefined },
-    { id: 'results', label: 'Results', icon: FileCheck2 },
-    { id: 'evaluations', label: 'Evaluations', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: SettingsIcon },
-  ];
+const NAV_ITEMS: NavItem[] = [
+  { id: 'dashboard', label: 'Home', icon: Home },
+  { id: 'upload', label: 'New invoice', icon: FileUp, isHighlight: true },
+  { id: 'inbox', label: 'Invoices', icon: Inbox },
+  { id: 'masterdata', label: 'Master data', icon: Database },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon },
+];
+
+interface SidebarProps {
+  current: NavId | null;
+  onNavigate: (id: NavId) => void;
+  queueStats: QueueStats;
+  onSignOut: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ current, onNavigate, queueStats, onSignOut }) => {
+  const { user } = useAuth();
+  const activeCount = queueStats.attention > 0 ? queueStats.attention : undefined;
 
   return (
-    <aside className="hidden lg:flex flex-col justify-between w-64 shrink-0 h-screen sticky top-0 bg-white border-r border-zinc-200/90 p-4 select-none z-30">
-      <div className="space-y-6">
-        {/* Brand Identity at top of far-left sidebar */}
-        <div 
-          onClick={() => onNavigate('dashboard')} 
+    <aside className="hidden lg:flex flex-col justify-between w-64 shrink-0 h-screen sticky top-0 bg-forest text-white p-4 select-none z-30">
+      <div className="space-y-7">
+        {/* Brand */}
+        <div
+          onClick={() => onNavigate('dashboard')}
           className="flex items-center gap-3 px-2 py-1.5 cursor-pointer group select-none"
         >
-          <div className="w-8 h-8 rounded-xl bg-emerald-600 p-0.5 shadow-sm group-hover:scale-105 transition-transform flex items-center justify-center">
-            <div className="w-full h-full bg-emerald-600 rounded-[10px] flex items-center justify-center">
-              <span className="text-white font-bold text-xs tracking-tight">AX</span>
-            </div>
+          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0 group-hover:bg-white/15 transition-colors">
+            <FileCheck2 className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm tracking-tight text-zinc-900">Axiom</span>
-              <span className="text-emerald-700 font-semibold text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
-                OPS
-              </span>
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-bold text-[15px] tracking-tight text-white leading-none">Invoice</span>
+              <span className="font-extrabold text-[15px] tracking-tight text-accent leading-none">Ops</span>
             </div>
-            <span className="text-[11px] text-zinc-500 block leading-tight">Operational AI OS</span>
+            <span className="text-[11px] text-white/55 block leading-tight mt-1">
+              Vendor invoice validation
+            </span>
           </div>
         </div>
 
-        {/* Navigation list */}
+        {/* Navigation */}
         <nav className="space-y-1" aria-label="Main navigation">
-          {navItems.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = currentPage === item.id;
-
+            const isActive = current === item.id;
             return (
               <button
                 key={item.id}
@@ -67,23 +75,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className={cn(
                   'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all group',
                   isActive
-                    ? 'bg-emerald-50/90 text-emerald-800 font-semibold border border-emerald-200/80 shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70'
+                    ? 'bg-white/12 text-white font-semibold ring-1 ring-white/15 shadow-sm'
+                    : 'text-white/65 hover:text-white hover:bg-white/8',
+                  item.isHighlight && !isActive && 'mt-2',
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <Icon
-                    className={cn(
-                      'w-4 h-4 transition-colors',
-                      isActive ? 'text-emerald-600' : 'text-zinc-400 group-hover:text-zinc-700'
-                    )}
-                  />
-                  <span>{item.label}</span>
-                </div>
-
-                {item.badge !== undefined && (
-                  <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    {item.badge}
+                <span className="flex items-center gap-3 min-w-0">
+                  <Icon className={cn('w-4 h-4 shrink-0 transition-colors', isActive ? 'text-accent' : 'text-white/45 group-hover:text-white/80')} />
+                  <span className="truncate">{item.label}</span>
+                </span>
+                {item.id === 'inbox' && activeCount !== undefined && (
+                  <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-signal text-white">
+                    {activeCount}
                   </span>
                 )}
               </button>
@@ -92,32 +95,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom Area: Governance Status & User Profile */}
-      <div className="space-y-3 pt-4 border-t border-zinc-100">
-        <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 text-xs">
-          <div className="flex items-center gap-2 text-zinc-800 font-semibold mb-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+      {/* Bottom: governance note + user */}
+      <div className="space-y-3">
+        <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-xs">
+          <div className="flex items-center gap-2 text-white font-semibold mb-1">
+            <ShieldCheck className="w-4 h-4 text-accent shrink-0" />
             <span className="truncate">Human-in-the-loop</span>
           </div>
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
-            Sensitive actions mandate deliberate human approval.
+          <p className="text-[11px] text-white/55 leading-relaxed">
+            Every run ends at an approver decision. Nothing is ever paid automatically.
           </p>
         </div>
 
-        {/* User representation in bottom left */}
-        <div 
-          onClick={() => onNavigate('settings')}
-          className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-zinc-100/70 cursor-pointer transition-colors"
-        >
-          <div className="w-8 h-8 rounded-xl bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-xs font-bold text-zinc-700 shrink-0">
-            AC
+        <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors" onClick={() => onNavigate('settings')}>
+          <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-xs font-bold text-white shrink-0">
+            {initials(user?.name)}
           </div>
-          <div className="min-w-0">
-            <span className="text-xs font-semibold text-zinc-900 block leading-tight truncate">Alex Chen</span>
-            <span className="text-[10px] text-zinc-500 block leading-tight truncate">Operations Lead</span>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-semibold text-white block leading-tight truncate">{user?.name}</span>
+            <span className="text-[10px] text-white/50 block leading-tight truncate capitalize">{user?.role}</span>
           </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSignOut();
+            }}
+            className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            title="Sign out"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </aside>
   );
 };
+
+export function initials(name?: string | null): string {
+  if (!name) return '?';
+  return name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+export { NAV_ITEMS };
+export type { NavItem };
