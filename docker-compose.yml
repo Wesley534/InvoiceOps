@@ -1,0 +1,60 @@
+# InvoiceOps backend - Docker Compose (SQLite by default).
+#
+#   docker compose up --build -d            # API on http://localhost:8000
+#
+# To run the API against MySQL instead, start the overlay file too:
+#   docker compose -f docker-compose.yml -f docker-compose.mysql.yml up --build -d
+#
+# Configuration overrides come from environment variables (or a root .env
+# file read by docker compose). Never store secrets in this file.
+
+name: invoiceops
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: invoiceops-backend:latest
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/invoiceops.db}
+      SECRET_KEY: ${SECRET_KEY:-dev-compose-secret-change-me}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:4173}
+      MASTER_DATA_DIR: /data/master_data
+      CONTRACTS_DIR: /app/contracts
+      UPLOAD_DIR: /data/uploads
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NVIDIA_TEXT_MODEL: ${NVIDIA_TEXT_MODEL:-meta/llama-3.3-70b-instruct}
+      NVIDIA_VISION_MODEL: ${NVIDIA_VISION_MODEL:-qwen/qwen2.5-vl-72b-instruct}
+      # Seeded users are created on first start from these env credentials
+      # (python -m app.initial_data in the entrypoint).
+      SEED_REVIEWER_EMAIL: ${SEED_REVIEWER_EMAIL:-reviewer@invoiceops.dev}
+      SEED_REVIEWER_NAME: ${SEED_REVIEWER_NAME:-Alex Reviewer}
+      SEED_REVIEWER_PASSWORD: ${SEED_REVIEWER_PASSWORD:-ReviewerPass2026}
+      SEED_APPROVER_EMAIL: ${SEED_APPROVER_EMAIL:-approver@invoiceops.dev}
+      SEED_APPROVER_NAME: ${SEED_APPROVER_NAME:-Jordan Approver}
+      SEED_APPROVER_PASSWORD: ${SEED_APPROVER_PASSWORD:-ApproverPass2026}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Read-only master data registers (the four CSVs).
+      - ${MASTER_DATA_HOST_DIR:-../invoiceops-evaluation-dataset/master_data}:/data/master_data:ro
+      # Persistent runtime data (uploads, sqlite file when used).
+      - invoiceops-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  invoiceops-data:

@@ -1,0 +1,21 @@
+# Build context is the InvoiceOps repo root; keep the image small and clean.
+.git
+backend/.venv
+backend/var
+backend/uploads
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+backend/.env
+.env
+var
+uploads
+data
+invoiceops-evaluation-dataset
+.vscode
+.idea

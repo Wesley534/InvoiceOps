@@ -1,0 +1,40 @@
+# Overlay that switches the InvoiceOps API from SQLite to MySQL.
+#
+# Run together with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.mysql.yml up --build -d
+#
+# The MySQL service is a local development instance. For a hosted VPS point
+# DATABASE_URL at your own MySQL server and drop this overlay file entirely.
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: invoiceops
+      MYSQL_USER: invoiceops
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-invoiceops}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-invoiceops-root}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      # Host port 3307 to avoid clashing with a local MySQL; API reaches the
+      # database over the compose network on 3306 regardless.
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uinvoiceops -p$$MYSQL_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  api:
+    environment:
+      DATABASE_URL: mysql+pymysql://invoiceops:${MYSQL_PASSWORD:-invoiceops}@mysql:3306/invoiceops?charset=utf8mb4
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql-data:

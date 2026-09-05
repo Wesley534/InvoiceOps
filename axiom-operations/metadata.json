@@ -1,0 +1,6 @@
+{
+  "name": "Axiom Operations",
+  "description": "An intuitive AI operational workflow system designed for business teams to automate repetitive tasks with built-in human review, evidence verification, and reliable results.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

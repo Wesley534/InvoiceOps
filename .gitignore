@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- InvoiceOps backend runtime artifacts ---
+backend/.venv/
+backend/var/
+backend/uploads/
+backend/tests/_tmp_*
+backend/scripts/var/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+*.sqlite3-journal
