@@ -208,8 +208,8 @@ flowchart LR
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Text model | `meta/llama-3.3-70b-instruct` | Strong instruction following + native JSON mode (`response_format={"type":"json_object"}`); 128K context (invoices are ~1–3K tokens); hosted on NVIDIA NIM with a free-tier API key |
-| Vision model | `qwen/qwen2.5-vl-72b-instruct` (fallback: `meta/llama-3.2-90b-vision-instruct`) | NVIDIA NIM hosts VLMs with schema-based structured generation — exactly what degraded-invoice extraction (CASE-010) needs |
+| Text model | `meta/llama-3.2-11b-vision-instruct` | Live free-tier NIM VLM used for both text repair (native JSON mode) and degraded-scan vision (formerly `meta/llama-3.3-70b-instruct`, EOL 2026-08-26) |
+| Vision model | `meta/llama-3.2-11b-vision-instruct` | Same model covers degraded-invoice extraction (CASE-010); schema-shaped prompt, output re-validated deterministically (formerly `qwen/qwen2.5-vl-72b-instruct`, EOL 2026-08-26) |
 | Document OCR (optional) | NVIDIA Nemotron OCR v2 (NIM) | If Tesseract quality disappoints on CASE-010, Nemotron OCR is purpose-built for messy real-world documents — swapped in config, not code |
 | Temperature | **0.0** | Extraction is a single-answer task; determinism and schema fidelity matter. The app generates all human-readable text, so no creativity is needed |
 | Structured output | `response_format: json_object` + the extraction schema in the prompt; application re-validates output with `jsonschema` | Structured, validated AI output is a hard requirement |
@@ -263,7 +263,7 @@ Swap provider by changing config (base URL + key + model names) — zero applica
 | Database | SQLite or MySQL via `DATABASE_URL` env (SQLAlchemy) | PostgreSQL, document, vector, single fixed engine | SQLite default for zero-setup local/eval; MySQL for the hosted VPS deployment — same schema and code, switch by env var |
 | Auth | DIY JWT + bcrypt, roles (reviewer/approver) | Clerk/Auth0/Firebase | Policy needs role enforcement, not identity infrastructure; two users for v0 |
 | LLM provider | NVIDIA API (NIM, OpenAI-compatible) | (fixed by requirement) | User-selected; loose coupling via LLMClient keeps it swappable |
-| LLM models | `meta/llama-3.3-70b-instruct` + `qwen/qwen2.5-vl-72b-instruct` | Single text-only model | Extraction needs both structured text repair and image understanding for degraded scans |
+| LLM models | `meta/llama-3.2-11b-vision-instruct` (text + vision) | Two distinct models | Single VLM covers text repair and degraded scans; account-free on NVIDIA free tier |
 | Extraction | `pdftotext` + regex first; NVIDIA only for ambiguity/repair | LLM-only extraction | 11/12 eval PDFs have clean text layers — deterministic first is cheaper, faster, auditable |
 | Validation | 11 deterministic checks in application code | LLM-judged checks | Thresholds come from Meridian policy; must be identical run-to-run and independent of the model |
 | Job execution | Database job table + background task + polling | Redis + Celery/worker | One VPS, one operator, ~60 s jobs; simplest correct answer; isolated for later swap |
@@ -725,7 +725,7 @@ WHAT THE SYSTEM DOES
   POST /invoices → PDF validated, hashed, stored in uploads/ → job QUEUED → background
   pipeline starts → regex extraction draft (high confidence) → since all required fields
   are present, the NVIDIA repair step is exercised anyway (proving the AI path):
-  draft + instructions → llama-3.3-70b-instruct JSON mode
+  draft + instructions → meta/llama-3.2-11b-vision-instruct JSON mode
 
 WHAT NVIDIA RECEIVES
   { task: "extract_invoice_fields", system_prompt (content-is-data),
@@ -797,16 +797,15 @@ Dependency notes: steps 2–9 are pure functions and unit-testable without any w
 
 ## Architecture
 
-InvoiceOps is a **React SPA (static on Netlify/Vercel) + FastAPI modular monolith on the user's VPS**. The backend runs a six-stage pipeline — intake, extraction, 11 deterministic checks, table-driven classification, evidence report, human gate — as an async background job whose progress the UI polls. AI (NVIDIA NIM: `llama-3.3-70b-instruct` for text repair, Qwen2.5-VL for degraded scans) is confined to one extraction service behind a swappable `LLMClient`; it proposes fields and nothing else. All validation, decisions, scheduling, auth, and state transitions are deterministic application logic, so the system behaves identically on every invoice and degrades to REVIEW (never false PASS) when the model is unavailable. Login enforces roles (reviewer / approver), every run ends at a human decision, and every outcome is appended to the database (SQLite or MySQL) for audit and evaluation.
+InvoiceOps is a **React SPA (static on Netlify/Vercel) + FastAPI modular monolith on the user's VPS**. The backend runs a six-stage pipeline — intake, extraction, 11 deterministic checks, table-driven classification, evidence report, human gate — as an async background job whose progress the UI polls. AI (NVIDIA NIM: `meta/llama-3.2-11b-vision-instruct` for text repair and degraded scans) is confined to one extraction service behind a swappable `LLMClient`; it proposes fields and nothing else. All validation, decisions, scheduling, auth, and state transitions are deterministic application logic, so the system behaves identically on every invoice and degrades to REVIEW (never false PASS) when the model is unavailable. Login enforces roles (reviewer / approver), every run ends at a human decision, and every outcome is appended to the database (SQLite or MySQL) for audit and evaluation.
 
 ## Stack
 
 ```text
 Frontend:   React SPA (Vite + TypeScript), static — Netlify or Vercel
 Backend:    FastAPI + Uvicorn — user's VPS behind Caddy/nginx (HTTPS)
-Database:   SQLite (default) or MySQL — selected via DATABASE_URL env; same schema on both
-LLM:        NVIDIA API (NIM, OpenAI-compatible) — llama-3.3-70b-instruct (text, JSON mode,
-            temp 0.0) + qwen/qwen2.5-vl-72b-instruct (vision); optional Nemotron OCR v2
+Database:   SQLite (default) or MySQL — selected via DATABASE_URL env; same schema on bothLLM:        NVIDIA API (NIM, OpenAI-compatible) — meta/llama-3.2-11b-vision-instruct
+             (text JSON mode + vision, temp 0.0)
 Storage:    VPS disk: uploads/ (PDFs), output/ (reports), invoiceops.db
 Auth:       DIY JWT + bcrypt, roles: reviewer / approver
 Jobs:       database job table (SQLite/MySQL) + FastAPI background task + UI polling (no Redis in v0)
